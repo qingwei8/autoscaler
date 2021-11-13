@@ -30,7 +30,7 @@ import (
 	vpa_api_util "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/utils/vpa"
 	"k8s.io/client-go/informers"
 	kube_client "k8s.io/client-go/kubernetes"
-	kube_restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	kube_flag "k8s.io/component-base/cli/flag"
 	"k8s.io/klog"
 )
@@ -46,6 +46,8 @@ var (
 		`Fraction of replica count that can be evicted for update, if more than one pod can be evicted.`)
 
 	address = flag.String("address", ":8943", "The address to expose Prometheus metrics.")
+
+	kubeconfig = flag.String("kubeconfig", "", "kubeconfig path")
 )
 
 const (
@@ -61,7 +63,8 @@ func main() {
 	metrics.Initialize(*address, healthCheck)
 	metrics_updater.Register()
 
-	config, err := kube_restclient.InClusterConfig()
+	//config, err := kube_restclient.InClusterConfig()
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
 		klog.Fatalf("Failed to build Kubernetes client : fail to create config: %v", err)
 	}

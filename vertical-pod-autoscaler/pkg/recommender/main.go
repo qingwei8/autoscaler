@@ -27,6 +27,7 @@ import (
 	metrics_quality "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/utils/metrics/quality"
 	metrics_recommender "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/utils/metrics/recommender"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	kube_flag "k8s.io/component-base/cli/flag"
 	"k8s.io/klog"
 )
@@ -50,6 +51,8 @@ var (
 	ctrNamespaceLabel   = flag.String("container-namespace-label", "namespace", `Label name to look for container names`)
 	ctrPodNameLabel     = flag.String("container-pod-name-label", "pod_name", `Label name to look for container names`)
 	ctrNameLabel        = flag.String("container-name-label", "name", `Label name to look for container names`)
+
+	kubeconfig = flag.String("kubeconfig", "", "kubeconfig path")
 )
 
 func main() {
@@ -93,7 +96,8 @@ func main() {
 }
 
 func createKubeConfig(kubeApiQps float32, kubeApiBurst int) *rest.Config {
-	config, err := rest.InClusterConfig()
+	//config, err := rest.InClusterConfig()
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
 		klog.Fatalf("Failed to create config: %v", err)
 	}

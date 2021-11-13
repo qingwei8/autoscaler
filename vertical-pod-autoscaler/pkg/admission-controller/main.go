@@ -33,8 +33,10 @@ import (
 	metrics_admission "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/utils/metrics/admission"
 	vpa_api_util "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/utils/vpa"
 	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
 	kube_client "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
+
+	"k8s.io/client-go/tools/clientcmd"
 	kube_flag "k8s.io/component-base/cli/flag"
 	"k8s.io/klog"
 )
@@ -56,6 +58,8 @@ var (
 	webhookAddress = flag.String("webhook-address", "", "Address under which webhook is registered. Used when registerByURL is set to true.")
 	webhookPort    = flag.String("webhook-port", "", "Server Port for Webhook")
 	registerByURL  = flag.Bool("register-by-url", false, "If set to true, admission webhook will be registered by URL (webhookAddress:webhookPort) instead of by service name")
+
+	kubeconfig = flag.String("kubeconfig", "", "kubeconfig path")
 )
 
 func main() {
@@ -69,7 +73,14 @@ func main() {
 
 	certs := initCerts(*certsConfiguration)
 
-	config, err := rest.InClusterConfig()
+	/*
+		config, err := rest.InClusterConfig()
+		if err != nil {
+				klog.Fatal(err)
+		}
+	*/
+
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
 		klog.Fatal(err)
 	}
@@ -94,7 +105,12 @@ func main() {
 		as.Serve(w, r)
 		healthCheck.UpdateLastActivity()
 	})
-	clientset := getClient()
+
+	//clientset := getClient()
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		klog.Fatal(err)
+	}
 	server := &http.Server{
 		Addr:      fmt.Sprintf(":%d", *port),
 		TLSConfig: configTLS(clientset, certs.serverCert, certs.serverKey),
